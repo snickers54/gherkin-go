@@ -627,15 +627,13 @@
   },
   "en": {
     "and": [
-      "* ",
       "And "
     ],
     "background": [
       "Background"
     ],
     "but": [
-      "* ",
-      "But "
+	  "With "
     ],
     "examples": [
       "Examples",

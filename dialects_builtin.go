@@ -651,12 +651,14 @@ var buildinDialects = gherkinDialectMap{
 				"Feature",
 				"Business Need",
 				"Ability",
+				"Flow",
 			},
 			background: []string{
 				"Background",
 			},
 			scenario: []string{
 				"Scenario",
+				"Dialog",
 			},
 			scenarioOutline: []string{
 				"Scenario Outline",
@@ -679,12 +681,10 @@ var buildinDialects = gherkinDialectMap{
 				"Then ",
 			},
 			and: []string{
-				"* ",
 				"And ",
 			},
 			but: []string{
-				"* ",
-				"But ",
+				"With ",
 			},
 		},
 	},

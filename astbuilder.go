@@ -10,13 +10,13 @@ type AstBuilder interface {
 }
 
 type astBuilder struct {
-	stack    []*astNode
+	stack    []*AstNode
 	comments []*Comment
 }
 
 func (t *astBuilder) Reset() {
 	t.comments = []*Comment{}
-	t.stack = []*astNode{}
+	t.stack = []*AstNode{}
 	t.push(newAstNode(RuleType_None))
 }
 
@@ -28,16 +28,16 @@ func (t *astBuilder) GetGherkinDocument() *GherkinDocument {
 	return nil
 }
 
-type astNode struct {
+type AstNode struct {
 	ruleType RuleType
 	subNodes map[RuleType][]interface{}
 }
 
-func (a *astNode) add(rt RuleType, obj interface{}) {
+func (a *AstNode) add(rt RuleType, obj interface{}) {
 	a.subNodes[rt] = append(a.subNodes[rt], obj)
 }
 
-func (a *astNode) getSingle(rt RuleType) interface{} {
+func (a *AstNode) getSingle(rt RuleType) interface{} {
 	if val, ok := a.subNodes[rt]; ok {
 		for i := range val {
 			return val[i]
@@ -46,7 +46,7 @@ func (a *astNode) getSingle(rt RuleType) interface{} {
 	return nil
 }
 
-func (a *astNode) getItems(rt RuleType) []interface{} {
+func (a *AstNode) getItems(rt RuleType) []interface{} {
 	var res []interface{}
 	if val, ok := a.subNodes[rt]; ok {
 		for i := range val {
@@ -56,14 +56,14 @@ func (a *astNode) getItems(rt RuleType) []interface{} {
 	return res
 }
 
-func (a *astNode) getToken(tt TokenType) *Token {
+func (a *AstNode) getToken(tt TokenType) *Token {
 	if val, ok := a.getSingle(tt.RuleType()).(*Token); ok {
 		return val
 	}
 	return nil
 }
 
-func (a *astNode) getTokens(tt TokenType) []*Token {
+func (a *AstNode) getTokens(tt TokenType) []*Token {
 	var items = a.getItems(tt.RuleType())
 	var tokens []*Token
 	for i := range items {
@@ -74,15 +74,15 @@ func (a *astNode) getTokens(tt TokenType) []*Token {
 	return tokens
 }
 
-func (t *astBuilder) currentNode() *astNode {
+func (t *astBuilder) currentNode() *AstNode {
 	if len(t.stack) > 0 {
 		return t.stack[len(t.stack)-1]
 	}
 	return nil
 }
 
-func newAstNode(rt RuleType) *astNode {
-	return &astNode{
+func newAstNode(rt RuleType) *AstNode {
+	return &AstNode{
 		ruleType: rt,
 		subNodes: make(map[RuleType][]interface{}),
 	}
@@ -95,11 +95,11 @@ func NewAstBuilder() AstBuilder {
 	return builder
 }
 
-func (t *astBuilder) push(n *astNode) {
+func (t *astBuilder) push(n *AstNode) {
 	t.stack = append(t.stack, n)
 }
 
-func (t *astBuilder) pop() *astNode {
+func (t *astBuilder) pop() *AstNode {
 	x := t.stack[len(t.stack)-1]
 	t.stack = t.stack[:len(t.stack)-1]
 	return x
@@ -128,7 +128,7 @@ func (t *astBuilder) EndRule(r RuleType) (bool, error) {
 	return true, err
 }
 
-func (t *astBuilder) transformNode(node *astNode) (interface{}, error) {
+func (t *astBuilder) transformNode(node *AstNode) (interface{}, error) {
 	switch node.ruleType {
 
 	case RuleType_Step:
@@ -180,12 +180,12 @@ func (t *astBuilder) transformNode(node *astNode) (interface{}, error) {
 		bg.Keyword = backgroundLine.Keyword
 		bg.Name = backgroundLine.Text
 		bg.Description = description
-		bg.Steps = astSteps(node)
+		bg.Steps = AstSteps(node)
 		return bg, nil
 
 	case RuleType_Scenario_Definition:
 		tags := astTags(node)
-		scenarioNode, _ := node.getSingle(RuleType_Scenario).(*astNode)
+		scenarioNode, _ := node.getSingle(RuleType_Scenario).(*AstNode)
 		if scenarioNode != nil {
 			scenarioLine := scenarioNode.getToken(TokenType_ScenarioLine)
 			description, _ := scenarioNode.getSingle(RuleType_Description).(string)
@@ -196,10 +196,10 @@ func (t *astBuilder) transformNode(node *astNode) (interface{}, error) {
 			sc.Keyword = scenarioLine.Keyword
 			sc.Name = scenarioLine.Text
 			sc.Description = description
-			sc.Steps = astSteps(scenarioNode)
+			sc.Steps = AstSteps(scenarioNode)
 			return sc, nil
 		} else {
-			scenarioOutlineNode, ok := node.getSingle(RuleType_ScenarioOutline).(*astNode)
+			scenarioOutlineNode, ok := node.getSingle(RuleType_ScenarioOutline).(*AstNode)
 			if !ok {
 				panic("Internal grammar error")
 			}
@@ -212,14 +212,14 @@ func (t *astBuilder) transformNode(node *astNode) (interface{}, error) {
 			sc.Keyword = scenarioOutlineLine.Keyword
 			sc.Name = scenarioOutlineLine.Text
 			sc.Description = description
-			sc.Steps = astSteps(scenarioOutlineNode)
+			sc.Steps = AstSteps(scenarioOutlineNode)
 			sc.Examples = astExamples(scenarioOutlineNode)
 			return sc, nil
 		}
 
 	case RuleType_Examples_Definition:
 		tags := astTags(node)
-		examplesNode, _ := node.getSingle(RuleType_Examples).(*astNode)
+		examplesNode, _ := node.getSingle(RuleType_Examples).(*AstNode)
 		examplesLine := examplesNode.getToken(TokenType_ExamplesLine)
 		description, _ := examplesNode.getSingle(RuleType_Description).(string)
 		examplesTable := examplesNode.getSingle(RuleType_Examples_Table)
@@ -258,7 +258,7 @@ func (t *astBuilder) transformNode(node *astNode) (interface{}, error) {
 		return strings.Join(desc, "\n"), nil
 
 	case RuleType_Feature:
-		header, ok := node.getSingle(RuleType_Feature_Header).(*astNode)
+		header, ok := node.getSingle(RuleType_Feature_Header).(*AstNode)
 		if !ok {
 			return nil, nil
 		}
@@ -305,7 +305,7 @@ func astLocation(t *Token) *Location {
 	}
 }
 
-func astTableRows(t *astNode) (rows []*TableRow, err error) {
+func astTableRows(t *AstNode) (rows []*TableRow, err error) {
 	rows = []*TableRow{}
 	tokens := t.getTokens(TokenType_TableRow)
 	for i := range tokens {
@@ -351,7 +351,7 @@ func astTableCells(t *Token) (cells []*TableCell) {
 	return
 }
 
-func astSteps(t *astNode) (steps []*Step) {
+func AstSteps(t *AstNode) (steps []*Step) {
 	steps = []*Step{}
 	tokens := t.getItems(RuleType_Step)
 	for i := range tokens {
@@ -361,7 +361,7 @@ func astSteps(t *astNode) (steps []*Step) {
 	return
 }
 
-func astExamples(t *astNode) (examples []*Examples) {
+func astExamples(t *AstNode) (examples []*Examples) {
 	examples = []*Examples{}
 	tokens := t.getItems(RuleType_Examples_Definition)
 	for i := range tokens {
@@ -371,9 +371,9 @@ func astExamples(t *astNode) (examples []*Examples) {
 	return
 }
 
-func astTags(node *astNode) (tags []*Tag) {
+func astTags(node *AstNode) (tags []*Tag) {
 	tags = []*Tag{}
-	tagsNode, ok := node.getSingle(RuleType_Tags).(*astNode)
+	tagsNode, ok := node.getSingle(RuleType_Tags).(*AstNode)
 	if !ok {
 		return
 	}
