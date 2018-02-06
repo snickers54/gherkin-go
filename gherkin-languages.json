@@ -642,7 +642,8 @@
     "feature": [
       "Feature",
       "Business Need",
-      "Ability"
+	  "Ability",
+	  "Flow"
     ],
     "given": [
       "* ",
@@ -651,7 +652,8 @@
     "name": "English",
     "native": "English",
     "scenario": [
-      "Scenario"
+	  "Scenario",
+	  "Dialog"
     ],
     "scenarioOutline": [
       "Scenario Outline",
