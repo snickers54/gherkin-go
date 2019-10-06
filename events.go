@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 )
 
 type (
@@ -144,6 +145,45 @@ func GherkinEvents(paths ...string) ([]CucumberEvent, error) {
 				Pickle: pickle,
 			})
 		}
+	}
+	return events, nil
+}
+
+func GherkinEventsFromString(raw string) ([]CucumberEvent, error) {
+	var events []CucumberEvent
+	p := "string input"
+	doc, err := ParseGherkinDocument(strings.NewReader(raw))
+	if errs, ok := err.(parseErrors); ok {
+		// expected parse errors
+		for _, err := range errs {
+			if pe, ok := err.(*parseError); ok {
+				events = append(events, pe.asAttachment(p))
+			} else {
+				return events, fmt.Errorf("parse feature file: %s, unexpected error: %+v\n", p, err)
+			}
+		}
+	}
+
+	if err != nil {
+		// non parse error, unexpected
+		return events, fmt.Errorf("parse feature file: %s, unexpected error: %+v\n", p, err)
+	}
+
+	events = append(events, &SourceEvent{
+		URI:  p,
+		Data: raw,
+	})
+
+	events = append(events, &GherkinDocumentEvent{
+		URI:      p,
+		Document: doc,
+	})
+
+	for _, pickle := range doc.Pickles() {
+		events = append(events, &PickleEvent{
+			URI:    p,
+			Pickle: pickle,
+		})
 	}
 	return events, nil
 }
