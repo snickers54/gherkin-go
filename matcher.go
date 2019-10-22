@@ -130,6 +130,7 @@ func (m *matcher) MatchFeatureLine(line *Line) (ok bool, token *Token, err error
 func (m *matcher) MatchBackgroundLine(line *Line) (ok bool, token *Token, err error) {
 	return m.matchTitleLine(line, TokenType_BackgroundLine, m.dialect.BackgroundKeywords())
 }
+
 func (m *matcher) MatchScenarioLine(line *Line) (ok bool, token *Token, err error) {
 	return m.matchTitleLine(line, TokenType_ScenarioLine, m.dialect.ScenarioKeywords())
 }
